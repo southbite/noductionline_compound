@@ -1,0 +1,21 @@
+<div class="page-header">
+    <h1>Details of part</h1>
+</div>
+
+<table class="toolbar">
+<tr>
+    <td class="td_icon"><img src="/images/linedpaper32.png"></td><td class="td_text"><%- link_to('List', path_to.account_project_webresources(params.account_id, params.project_id)) %></td>
+    <td class="td_icon"><img src="/images/pencil32.png"></td><td class="td_text"><%- link_to('Edit', path_to.edit_account_project_webresource(params.account_id, params.project_id, webresource), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/minus32.png"></td><td class="td_text"><%- link_to('Delete', path_to.account_project_webresource(params.account_id, params.project_id, webresource), {class: 'buttonLink', method: 'delete', remote: true, jsonp: '(function (u) { location.href = u; })'}) %></td>
+</tr>
+</table>
+<table class="table table-bordered">
+    <tbody>
+        <tr><th>key</th><td><%= webresource.key %></td></tr>
+        <tr><th>created</th><td><%= webresource.created %></td></tr>
+        <tr><th>description</th><td><%= webresource.description %></td></tr>
+        <tr><th>type</th><td><%= webresource.type %></td></tr>
+        <tr><th>category</th><td><%= webresource.category %></td></tr>
+        <tr><th>file:</th><td><a href="/images/<%= webresource.path %>" target="_blank"><%= webresource.path %></a></td></tr>    
+    </tbody>
+</table>

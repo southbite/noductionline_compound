@@ -1,0 +1,15 @@
+<div class="page-header">
+    <h2>Project <%= project.name %></h2>
+</div>
+<table class="toolbar">
+<tr>
+    <td class="td_icon"><img src="/images/pencil32.png"></td><td class="td_text"><%- link_to('Edit', path_to.edit_account_project(params.account_id, project), {class: 'buttonLink'}) %></td>
+</tr>
+</table>
+<table class="table table-bordered">
+    <tbody>
+        <tr><th>created</th><td><%= project.created %></td></tr>
+        <tr><th>createdBy</th><td><%= project.createdBy %></td></tr>    
+    </tbody>
+</table>
+

@@ -1,0 +1,18 @@
+<ul class="breadcrumb">
+    <li><a href="/">Home</a> <span class="divider">/</span></li>
+    <li><a href="<%- pathTo.anotherobjects() %>">anotherobjects</a> <span class="divider">/</span></li>
+    <li class="active"><a href="#">Edit anotherobject</a></li>
+</ul>
+
+<div class="page-header">
+    <h1>Edit anotherobject</h1>
+</div>
+
+<% var form = formFor(anotherobject, {action: pathTo.anotherobject(anotherobject), method: 'PUT', id: "anotherobject-form", class: 'form-horizontal'}) %>
+<%- form.begin() %>
+<%- include _form %>
+<div class="form-actions">
+    <%- form.submit('<i class="icon-ok icon-white"></i> Update anotherobject', {class: 'btn btn-primary'}) %> or
+    <%- linkTo('Cancel', pathTo.anotherobject(anotherobject), {class: 'btn'}) %>
+</div>
+<%- form.end() %>

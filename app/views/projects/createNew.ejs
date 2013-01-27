@@ -1,0 +1,48 @@
+<script>
+
+function addNew()
+{
+	/*
+	$('#Project_name').val($('#txtProject_name').val());
+	$('#Project_description').val($('#txtProject_description').val());
+	
+	$('#project_form').submit();
+	*/
+	
+	var pData = {"Project":{"name":$('#txtProject_name').val(), "description":$('#txtProject_description').val()}};
+	pData[$('meta[name=csrf-param]').attr('content')] = $('meta[name=csrf-token]').attr('content');
+	
+	console.log(pData);
+	
+	var pURL = "/accounts/<%- account.id %>/projects/createNewInternal";
+	
+	var onSuccess = function(response)
+	{
+		if (response.status == "OK")
+		{
+			var projectsListURL = '/accounts/<%- account.id %>/projects/listjson';
+			parent.updateSideMenuItems(projectsListURL, 'ul_sidemenu_project', response.data, 'project');
+			parent.closeModalChildWindow();
+		}
+	}
+	
+	postData(pURL, pData, onSuccess);
+}
+
+</script>
+
+<table cellpadding=5>
+	<tr>
+		<td class="label-text">Name:</td>
+		<td><input type="text" id="txtProject_name" class="mediumText" /></td>
+	</tr>
+	<tr>
+		<td class="label-text" colspan="2">Description:</td>
+	</tr>
+	<tr>
+		<td colspan="2"><textarea id="txtProject_description" rows="3" cols="150" style="width:300px"></textarea></td>
+	</tr>
+	<tr>
+		<td colspan="2"><span class="button-dark" onclick="addNew()" style="float:right">Create</span></td>
+	</tr>
+</table>

@@ -1,0 +1,12 @@
+<div class="page-header">
+    <h1>New blueprint for project <%- link_to(project.name, path_to.account_project(params.account_id, project)) %></h1>
+</div>
+
+<% form_for(blueprint, {action: path_to.account_project_blueprints(params.account_id, params.project_id), method: 'POST', id: "blueprint_form", class: 'form-horizontal'}, function (form) { %>
+    <div class="form-actions">
+        <%- form.submit('<i class="icon-ok icon-white"></i> Create', {class: 'btn btn-primary'}) %> or
+        <%- link_to('Cancel', path_to.account_project_blueprints(params.account_id, params.project_id), {class: 'btn'}) %>
+    </div>
+    <%- partial('blueprints/form.ejs', {locals: {form: form, blueprint: blueprint}}) %>
+  
+<% });%>

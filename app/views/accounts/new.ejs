@@ -1,0 +1,11 @@
+<div class="page-header">
+    <h1>New account</h1>
+</div>
+
+<% form_for(account, {action: path_to.accounts(), method: 'POST', id: "account_form", class: 'form-horizontal'}, function (form) { %>
+    <%- partial('accounts/form.ejs', {locals: {form: form, account: account}}) %>
+    <div class="form-actions">
+        <%- form.submit('<i class="icon-ok icon-white"></i> Create account', {class: 'btn btn-primary'}) %> or
+        <%- link_to('Cancel', path_to.accounts(), {class: 'btn'}) %>
+    </div>
+<% });%>

@@ -1,0 +1,111 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+
+<script type="text/javascript">
+
+var onItemCreatedEvent;
+
+
+/*
+	Test URL
+	http://localhost:3000/application/pick?list_url=%2Faccounts%2F4ffddcda294d8f0000000001%2Fprojects%2F4fff2d4173946f9008000016%2Frobots%2Fjsonlist&name_property=name&image_property=thumbnailPath
+ */
+
+ $(document).ready(function() {
+	try
+	{
+		var currentProject = getQuerystring('suggested_project_id', null);
+		onItemCreatedEvent = parent[getQuerystring('item_created_event', null)]; 
+		
+		var success = function(projects, err)
+	 	{
+			if (!err)
+			{
+				console.log(projects);
+				populateddlProject(projects, currentProject);
+			}
+			else
+			{
+				console.log(err);
+			}
+	 	}
+	 
+	 	fetchAccountObjects('/accounts/<%- account.id %>/projects/jsonlist', success, "name", "ASC", "");
+		
+	}
+	catch(err)
+	{
+		console.log(err.toString());
+	}
+ });
+ 
+ function populateddlProject(projects, suggestedProjectId)
+ {
+	 var optionTags = renderOptionTags(projects, 'name', 'id', suggestedProjectId);
+	 console.log(optionTags);
+	 $('#ddlProject').append(optionTags);
+ }
+ 
+ function addNew()
+ {
+	 var projectId = $('#ddlProject').val();
+	 
+	 var pData = {"Blueprint":{"name":$('#txtBlueprint_name').val(), "description":$('#txtBlueprint_description').val()}};
+		pData[$('meta[name=csrf-param]').attr('content')] = $('meta[name=csrf-token]').attr('content');
+		
+		console.log(pData);
+		
+		var pURL = "/accounts/<%- account.id %>/projects/" + projectId + "/blueprints/createNewInternal";
+		
+		var onSuccess = function(response)
+		{
+			if (response.status == "OK")
+			{
+				onItemCreatedEvent(response.data);
+				
+				/*
+				if (robotType == 'processor')
+					parent.updateSideMenuItems('robot', response.data);
+				else
+					parent.updateSideMenuItems('component', response.data);
+				
+				parent.closeModalChildWindow();
+				*/
+			}
+			else
+			{
+				console.log(response);//TODO add alert
+			}
+		}
+		
+		postData(pURL, pData, onSuccess);
+ }
+	 	 
+</script>
+
+<div id="newrobot_form_div" class="form_div">
+	<table>
+		<tr>
+			<td class="label-text">Project:</td>
+			<td>
+				<select id="ddlProject" class="mediumText" /></select>
+			</td>
+		</tr>
+		<tr>
+			<td class="label-text">Name:</td>
+			<td>
+				<input type="text" id="txtBlueprint_name" class="mediumText" />
+			</td>
+		</tr>
+		<tr>
+			<td class="label-text" colspan="2">Description:</td>
+		</tr>
+		<tr>
+			<td colspan="2"><textarea id="txtBlueprint_description" rows="3" cols="150" style="width:300px"></textarea></td>
+		</tr>
+		<tr>
+			<td colspan="2"><span class="button-dark" onclick="addNew()" style="float:right">Create</span></td>
+		</tr>
+	</table>
+</div>
+

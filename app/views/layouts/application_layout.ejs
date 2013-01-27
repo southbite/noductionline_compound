@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title><%= title %></title>
+        <%- stylesheet_link_tag('bootstrap', 'style', 'bootstrap-responsive','noductionstyle') %>
+        <%- javascript_include_tag('jquery-1.7.1-min', 'bootstrap', 'rails', 'application') %>
+        <%- csrf_meta_tag() %>
+    </head>
+    <script>
+    	
+    <% var flash = request.flash('info').pop(); if (flash) { %>
+    	showMessage("<%- flash %>", "info", 5000);
+    <% } %>
+    
+    <% flash = request.flash('error').pop(); if (flash) { %>
+    	showMessage("<%- flash %>", "error", 5000);
+    <% }; %>
+    
+    <% flash = request.flash('warning').pop(); if (flash) { %>
+    	showMessage("<%- flash %>", "warning", 5000);
+    <% }; %>
+    
+    <% flash = request.flash('success').pop(); if (flash) { %>
+    	showMessage("<%- flash %>", "success", 5000);
+    <% }; %>
+    
+    </script>
+    <body>
+        <div class="component_container">
+           
+            
+            <%- body %>
+            
+            <hr />
+            <footer>
+                <p>&copy; Company 2012</p>
+            </footer>
+        </div>
+    </body>
+</html>

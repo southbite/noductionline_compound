@@ -1,0 +1,321 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery-ui-min','jquery.jsPlumb-1.3.10-all-min','designer_clientside','jquery.qtip','blueprint_designer_clientside') %>
+<%- stylesheet_link_tag('noductionstyle','blueprint_designer','jquery.qtip') %>
+<script>
+	
+	var getStepConfiguration = function(stepId)
+	{
+		console.log('getting step config for step ' + stepId);
+		
+		//var stepData = eval('(' + decodeURIComponent($('#blueprint_step_' + stepId).attr('data')) + ')');
+		var stepData = deserializeJSON($('#blueprint_step_' + stepId).attr('data'));
+		return stepData;
+	}
+
+	var stepConfigured = function(robot, stepId, configObject)
+	{
+		console.log('stepConfigured');
+		
+		/*
+		console.log(robot);
+		console.log(stepId);
+		console.log(configObject);
+		//stepRobot
+		$('#blueprint_step_' + stepId).data('stepData', configObject);
+		$('#blueprint_step_' + stepId).data('stepRobot', robot);
+		
+		$('body').data('stepData' + stepId, configObject);
+		$('body').data('stepRobot' + stepId, robot);
+		
+		console.log('checking...');
+		console.log($('#blueprint_step_' + stepId).data('stepData'));
+		console.log($('#blueprint_step_' + stepId).data('stepRobot'));
+	
+		*/
+		
+		$('#blueprint_step_' + stepId).attr('robot', serializeJSON(robot));
+		$('#blueprint_step_' + stepId).attr('robot_thumbnail', robot.thumbnailPath);
+		$('#blueprint_step_' + stepId).attr('data', serializeJSON(configObject));
+
+		$('#blueprint_step_' + stepId).css('background-image', 'url("' + robot.thumbnailPath + '")');
+		$('#blueprint_step_name' + stepId).attr('onclick', "blueprintDesigner.editStep('" + robot.id + "'," + stepId + ");");
+		
+		closeModalChildWindow();
+	}
+
+	var onEditStepClicked = function (robotId, stepId)
+	{
+		//we use this area to open up a modal window containing an iframe with the bots configurator if the robot id is > 0
+		//the configurator code always has a method called update(params) - which in turn calls the parent for and updates the step data
+		//and a method called configure(params) which gets the step data object and re-updates the configurator ui
+		
+		console.log('editStepClicked');
+		
+		var header = "Pick a bot";
+		var sourceUrl = '/accounts/<%- account.id %>/projects/<%- project.id %>/robots/pick?step=' + stepId;
+		
+		console.log('configuring bot');
+		console.log(robotId);
+		
+		if (robotId != null && robotId != 0)
+		{
+			header = "Configure bot";
+			sourceUrl = '/accounts/<%- account.id %>/projects/<%- project.id %>/robots/' + robotId + '/configure?step=' + stepId;
+		}
+		
+		console.log('sourceUrl');
+		console.log(sourceUrl);
+		
+		//alert(robotId + stepId);
+		var content = "<div class=\"iframeContainer\" ><iframe class=\"containerIframe\" src=\"" + sourceUrl + "\"></iframe></div>";
+		openModalChildWindow(header , content, 800, 600);
+	}
+
+	function loadSystemBots()
+	{
+		try
+		{
+			var success = function(items)
+		 	{
+				console.log('got bots');
+				console.log(items);
+				
+				populateSystemRobots(items, function(){
+					$('.system_bot').draggable({  
+						cursor:"move",
+						helper:function(event){  
+							
+							//var stepId = blueprintDesigner.stepCounter + 1; l8r
+							
+							var botId = $(this).attr('bot_id');
+							var thumbnailPath = $(this).attr('bot_thumbnail');
+							var botName = $(this).attr('bot_name');
+							
+							var p = $("<div id=\"proxy_drag_display\" class=\"process-step\" robot_name=\"" + botName + "\" robot=\"{id:'" + botId + "', thumbnailPath: '" + thumbnailPath + "', name: '" + botName + "'}\" data=\"{}\" style=\"background-image:url('" + thumbnailPath + "');background-repeat:no-repeat;position:absolute;\" id=\"0\" ></div>");   
+							p.appendTo('body');   
+							
+							return p;   
+						}, 
+						start:function(){  
+					       
+					    },  
+					    drag:function(){  
+					       
+					    },  
+					    stop:function(){  
+					      
+					        console.log('drag stopped');
+					        console.log( $('#proxy_drag_display'));
+					        
+					        var top = (parseFloat($('#proxy_drag_display').css('top').replace('px','')) - 48);
+					        var left = $('#proxy_drag_display').css('left').replace('px','');
+					        
+							var robotEncoded = encodeURIComponent($('#proxy_drag_display').attr('robot'));
+							
+							var stepId = blueprintDesigner.getNewStepId();
+							
+							
+							
+							var stepName = $('#proxy_drag_display').attr('robot_name') + ' ' + stepId;
+								
+					        var newStep = {id:stepId, name: stepName, robot: robotEncoded, data: {}, ui:{y:top, x:left}};
+
+					        console.log('top left');
+					        
+					        console.log(top);
+					        console.log(left);
+					        
+					        $('#proxy_drag_display').remove();
+					        
+					        blueprintDesigner.addStep(newStep);
+					     
+					    } 
+					}); 
+				});
+		 	}
+			
+			fetchAccountObjects('/accounts/<%- account.id %>/robots/jsonlistall?category=system', success);
+		}
+		catch(err)
+		{
+			console.log(err.toString());
+		}
+	}
+	
+	function populateSystemRobots(items, done)
+	{
+		var toolbar =  $('.designer_toolbar tbody tr');
+		for (var botindex in items)
+		{
+			var bot = items[botindex];
+			toolbar.append("<td id=\"td_system_bot_" + bot.id + "\" bot_id=\"" + bot.id + "\" bot_thumbnail=\"" + bot.thumbnailPath + "\" bot_name=\"" + bot.name + "\" class=\"designer_td_icon system_bot\" colspan=\"2\"><img class=\"small_icon\" src=\"" + bot.thumbnailPath + "\"></td>");
+		}
+		done();
+	}
+	
+	 $(document).ready(function() {
+		//try
+		//{
+			$("#txt_blueprint_name").val('<%- blueprint.name -%>');
+			$("#txt_blueprint_version").val('<%- blueprint.version -%>');
+			$("#div_blueprint_systemversion").html('<%- blueprint.systemVersion -%>');
+			
+			var processObjString = "<%- blueprint.flowDiagram -%>";
+			var processObject = getBlankProcessObj();
+			
+			if (processObjString != "")
+				processObject = eval('(' + decodeURIComponent("<%- blueprint.flowDiagram -%>") + ')');
+			
+			/*
+			var processObject = getTestProcessObj();
+			*/		
+			console.log(processObject);
+			
+			window.blueprintDesigner = new BlueprintDesigner();
+			blueprintDesigner.onEditStep = onEditStepClicked;
+			
+			blueprintDesigner.initialize('blueprint_flow_container', function(e){
+				if (e == null)
+				{
+					loadSystemBots();
+					
+					blueprintDesigner.drawBlueprint(processObject, function()
+					{
+						
+					}); //ordinarily we will get the blueprint object from the controller
+				}
+				else
+					throw e;
+			});
+		//}
+		//catch(err)
+		//{
+		//	console.log(err.toString());
+		//}
+	 });
+	 
+	 function getBlankProcessObj()
+	 {
+		 var procObj = {};
+		 procObj.steps = {};
+		 procObj.isProcess = true;
+		 
+		 return procObj;
+	 }
+	 
+	 function getTestProcessObj()
+	 {
+	 	var testProcObj = {};
+	 	testProcObj.steps = {};
+	 	testProcObj.isProcess = true;
+	 	testProcObj.steps[1] = {name:'initial step', id:1, steps:[2], robot:'{}', data:'{}', ui:{x:20,y:400}};
+	 	testProcObj.steps[2] = {name:'step 2', id:2, steps:[3,4], robot:'{}', data:'{}', ui:{x:120,y:400}};
+	 	testProcObj.steps[3] = {name:'step 3', id:3, steps:[], robot:'{}', data:'{}', ui:{x:220,y:400}};
+	 	testProcObj.steps[4] = {name:'step 4', id:4, steps:[], robot:'{}', data:'{}', ui:{x:320,y:450}};
+	 	
+	 	return testProcObj;
+	 }
+	 
+	 function submitContainerForm()
+	 {
+	 	$("#Blueprint_name").val($("#txt_blueprint_name").val());
+	 	$("#Blueprint_version").val($("#txt_blueprint_name").val());
+	 	
+	 	var systemVersion = $("#div_blueprint_systemversion").html();
+	 	
+	 	console.log('systemVersion');
+	 	console.log(systemVersion);
+	 	
+	 	if (systemVersion == null || systemVersion == '')
+	 		systemVersion = '0';
+	 	else
+	 		systemVersion = (parseFloat(systemVersion) + 1).toString();
+	 	
+	 	console.log('systemVersion');
+	 	console.log(systemVersion);
+	 	
+		$("#Blueprint_systemversion").val(systemVersion);
+	 	
+	 	var getStepData = function(stepId, dataKey)
+	 	{
+	 		console.log('in get step data method');
+	 		console.log(this);
+	 		var returnVal = $('#blueprint_step_' + stepId).data(dataKey);
+	 		console.log(returnVal);
+	 		return returnVal;
+	 	}
+	 	
+	 	var processObject = blueprintDesigner.getProcessObject(getStepData);
+	 	var processObjectString = encodeURIComponent(JSON.stringify(processObject));
+	 	
+	 	console.log(processObjectString);
+	 	
+	 	$("#Blueprint_flowDiagram").val(processObjectString);
+	 	
+	 	$("#blueprint_form").submit();
+	 }
+	 
+	 var designerDetailsVisible = false;
+	 function toggleDesignerDetails()
+	 {
+	 	if (!designerDetailsVisible)
+	 		$('.designerDetails').show();
+	 	else
+	 		$('.designerDetails').hide();
+	 		
+	 	designerDetailsVisible = !designerDetailsVisible;
+	 }
+	 
+	 function getFlowData()
+	 {
+	 	return "";
+	 }
+
+</script>
+<table class="designerContainer">
+	<tr class="designerHeader">
+		<td class="designer_toolbar_cell">
+			<table class="designer_toolbar">
+				<tr>
+				    <td class="designer_td_icon"><img src="/images/save16.png" onclick="submitContainerForm()" alt="save" /></td>
+				    <td class="designer_td_icon"><img src="/images/pencilplus32.png" onclick="toggleDesignerDetails()" alt="toggle details" style="width:16px;height:16px" /></td>
+				    <td style="width:5px" colspan="2">|</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr class="designerDetailsRow">
+		<td class="designerDetails">
+			<div class="control-group">
+			   <label for="txt_blueprint_name" class="details_label">Name</label>
+			   <div class="controls">
+			       <input class="mediumText" type="text" name="txt_blueprint_name" id="txt_blueprint_name"></input>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="Blueprint_version" class="details_label">Version</label>
+			   <div class="controls">
+			       <input class="smallText" type="text" name="txt_blueprint_version" id="txt_blueprint_version"></input>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="Blueprint_systemversion" class="details_label">System Version</label>
+			   <div class="controls">
+			       <div id="div_blueprint_systemversion" name="div_blueprint_systemversion" ></div>
+			   </div>
+			</div>
+		</td>
+	</tr>
+	<tr class="designerContainerTopSplitterRow"><td class="designerContainerTopSplitterCell" colspan="2"></td></tr>
+	<tr class="designerContainerMainRow"><td class="designerContainerMainCell" colspan="2">
+		<% form_for(blueprint, {action: path_to.account_project_blueprint(params.account_id, params.project_id, blueprint), method: 'PUT', id: "blueprint_form", class: 'form-horizontal', enctype: 'multipart/form-data'}, function (form) { %>
+		    <input type="hidden" name="Blueprint[name]" id="Blueprint_name" />
+			<input type="hidden" name="Blueprint[version]" id="Blueprint_version" />
+			<input type="hidden" name="Blueprint[systemVersion]" id="Blueprint_systemversion" />
+			<input type="hidden" name="Blueprint[flowDiagram]" id="Blueprint_flowDiagram" />
+			
+		    <div id="blueprint_flow_container" style="width:100%;height:100%;position:relative">
+				   
+			 </div>
+		<% });%>
+	</td></tr>
+</table>

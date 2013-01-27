@@ -1,0 +1,9 @@
+<div class="page-header"><h1>Edit account</h1></div>
+
+<% form_for(account, {action: path_to.account(account), method: 'PUT', id: "account_form", class: 'form-horizontal'}, function (form) { %>
+    <%- partial('accounts/form.ejs', {locals: {form: form, account: account}}) %>
+    <div class="form-actions">
+        <%- form.submit('<i class="icon-ok icon-white"></i> Update account', {class: 'btn btn-primary'}) %> or
+        <%- link_to('Cancel', path_to.account(account), {class: 'btn'}) %>
+    </div>
+<% });%>

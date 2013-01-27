@@ -1,0 +1,47 @@
+<%- javascript_include_tag('jquery-1.7.1-min','schematic-editor') %>
+<%- stylesheet_link_tag('schematic-editor','noductionstyle') %>
+
+<script>
+
+var container;
+var editor;
+
+//set json
+function setJSON () {
+    var json = {
+        "array": [1, 2, 3],
+        "boolean": true,
+        "null": null,
+        "number": 123,
+        "object": {"a": "b", "c": "d"},
+        "string": "Hello World"
+    };
+    editor.set(json);
+}
+
+// get json
+function getJSON() {
+    var json = editor.get();
+    alert(JSON.stringify(json, null, 2));
+}
+
+$(document).ready(function() {
+	try
+	{
+		container = document.getElementById("jsoneditor");
+	    editor = new JSONEditor(container);
+	}
+	catch(err)
+	{
+		console.log(err.toString());
+	}
+ }); 
+
+</script>
+
+<p>
+<button onclick="setJSON();">Set JSON</button>
+<button onclick="getJSON();">Get JSON</button>
+</p>
+
+<div id="jsoneditor" style="width: 800px; height: 600px;"></div>

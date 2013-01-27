@@ -1,0 +1,30 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min', 'application') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+<script>
+
+$(document).ready(function() {
+	var componentId = '<%- robot.id -%>';
+	parent.getComponentConfiguration(componentId, function(getComponentConfigurationError, configurationObject){
+		setConfiguration(configurationObject);
+	});
+});
+
+function updateConfiguration(done)
+{
+	var componentId = '<%- robot.id -%>';
+	var configObject = getConfiguration();
+	
+	writeToLog('config update happening');
+	writeToLog(configObject);
+	
+	parent.componentConfigured(componentId, configObject, done);
+}
+
+function removeComponent()
+{
+	var componentId = '<%- robot.id -%>';
+	parent.removeComponent(componentId);
+}
+</script>
+<div class="hdivider_light"></div>
+<%- decodeURIComponent(robot.configuratorHtml) -%>

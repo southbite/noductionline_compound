@@ -1,0 +1,87 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+
+<script type="text/javascript">
+
+	 $(document).ready(function() {
+		try
+		{
+			var success = function(items)
+		 	{
+				console.log('got bots');
+				console.log(items);
+				//Bots in this project
+				
+				populateRobots(items, "Bots in this project:");
+		 	}
+			
+			fetchAccountObjects('/accounts/<%- account.id %>/projects/<%- project.id %>/robots/jsonlist', success);
+		}
+		catch(err)
+		{
+			console.log(err.toString());
+		}
+	 });
+	 
+	 function populateRobots(items, header)
+	 {
+		var listHtml = "<div class=\"picker_section_header\">" + header + "</div><table class=\"picker_list\" cellpadding=\"3\">"
+		var botRowCount = Math.ceil(items.length / 12);
+		var actualCellIndex = 0;
+		
+		for (var rowIndex = 0; rowIndex < botRowCount; rowIndex++)
+		{
+			listHtml += "<tr>";
+			for (var cellIndex = 0; cellIndex < 12; cellIndex++)
+			{
+				listHtml += "<td class=\"picker_cell\" id=\"pickrobotcell_" + actualCellIndex.toString() + "\"></td>";
+				actualCellIndex++;
+			}
+			listHtml += "</tr>";
+		}
+		
+		listHtml += "</table>"
+		
+		$('#botsContainerDiv').append(listHtml);
+		
+		var cellCount = 0;
+		for (var botIndex in items)
+		{
+			var botInstance = items[botIndex];
+			var botHtml = getBotHtml(botInstance);
+			
+			console.log(botInstance);
+			
+			$('#pickrobotcell_' + cellCount.toString()).html(botHtml);
+			$('#pickrobot_' + botInstance.id).data('botInstance', botInstance);
+			
+			cellCount++;
+		}
+	 }
+	 
+	 function getBotHtml(botInstance)
+	 {
+		 var botImage = "defaultbot32.png";
+		 
+		 if (botInstance.thumbnailPath)
+			 botImage = botInstance.thumbnailPath;
+		 
+		 return "<div class=\"pick_bot\" id=\"pickrobot_" + botInstance.id + "\" ><img src=\"" + botImage + "\" style=\"margin-left:10px\"></img><br><span onclick=\"selectBot('pickrobot_" + botInstance.id + "');\" class=\"pick_bot_text\">" + botInstance.name + "</span></div>";
+	 }
+	 
+	 function selectBot(botControlId)
+	 {
+		 console.log('selecting bot');
+		 var bot = $('#' + botControlId).data('botInstance');
+		 var stepId = getQuerystring('step', null);
+		 
+		 var url = '/accounts/<%- account.id %>/projects/<%- project.id %>/robots/' + bot.id + '/configure?step=' + stepId;
+		 
+		 window.location = url;
+	 }
+	 
+</script>
+
+<div id="botsContainerDiv" class="pickerContainer">
+	
+</div>

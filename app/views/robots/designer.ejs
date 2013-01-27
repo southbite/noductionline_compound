@@ -1,0 +1,534 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min','yahoo-dom-event','yahoo-element-min','yahoo-container-core-min','yahoo-simpleeditor-min','codemirror','codemirror_xml','codemirror_javascript','codemirror_htmlmixed','codemirror_css') %>
+<%- stylesheet_link_tag('codemirror','yahoo-skin','noductionstyle') %>
+<script>
+
+	var javascriptEditor;
+	var htmlEditor;
+	var helpEditor;
+	var componentVerticalList;
+	
+	 $(document).ready(function() {
+		try
+		{
+			
+			
+			$('html').css('width','100%');
+			$('html').css('height','100%');
+			
+			$("#txt_robot_name").val('<%- robot.name -%>');
+			$("#txt_robot_version").val('<%- robot.version -%>');
+			$("#ta_help").val(decodeURIComponent('<%- robot.helpHtml -%>'));
+			$("#txt_robot_category").val('<%- robot.category -%>');
+			$("#ta_robot_description").val(decodeURIComponent('<%- robot.description -%>'));
+			$("#div_robot_systemversion").html('<%- robot.systemVersion -%>');
+			
+			
+			componentVerticalList = new verticalList();
+			helpEditor = new YAHOO.widget.SimpleEditor('ta_help', {height: '550px', width: '100%', dompath: true});
+			////console.log(helpEditor);
+			helpEditor.render();
+			
+			//$("#ta_configurator").val(decodeURIComponent('<%- robot.configuratorHtml -%>'));
+			//$("#ta_javascript").val(decodeURIComponent('<%- robot.javascript -%>'));
+			
+			javascriptEditor = new CodeMirror.fromTextArea(document.getElementById("ta_javascript"), {mode: "javascript", tabMode: "indent", lineNumbers: true});
+			htmlEditor = new CodeMirror.fromTextArea(document.getElementById("ta_configurator"), {mode: "text/html", tabMode: "indent", lineNumbers: true});
+			
+			javascriptEditor.setValue(decodeURIComponent('<%- robot.javascript -%>'));
+			htmlEditor.setValue(decodeURIComponent('<%- robot.configuratorHtml -%>'));
+			
+			$("#editorTabs").tabs({
+			 onSelect:function(title){  
+			       refreshEditors();
+			    }
+			});
+			
+			resizeComponents();
+			
+			var onComponentSelected = function(componentId)
+			{
+				updateOpenComponentConfiguration(function(){
+					console.log('component selected ' + componentId);
+					var componentConfigUrl = '/accounts/<%- account.id %>/projects/<%- project.id %>/robots/' + componentId + '/configureComponent';
+					$('#componentConfiguratorFrame').attr('src', componentConfigUrl);
+				});
+				
+			}
+			
+			var onComponentDeleted = function(componentId)
+			{
+				setComponentStatus(componentId, 'to-delete');
+			}
+			
+			var onNewComponent = function()
+			{
+				addComponent();
+			}
+			
+			var componentsFetched = function(components, componentsFetchedError)
+			{
+				
+				for (var compIndex in components)
+				{
+					//console.log('compIndex' + compIndex);
+					//console.log(components[compIndex]);
+				}
+				
+				if (!componentsFetchedError)
+				{
+					////console.log('populating vertical list');
+					//componentVerticalList.populateVerticalList(components, onComponentSelected, '/images/component.png', null, 'robot_vertical_list', 'thumbnailPath', ['name','systemVersion'], function(e){
+					componentVerticalList.populateVerticalList(components, onComponentSelected, '/images/component.png', null, 'robot_vertical_list', 'thumbnailPath', ['name','systemVersion'], onComponentDeleted, null, null, function(populateVerticalListError){
+						
+						////console.log("vert list populated");
+						if (!populateVerticalListError)
+						{
+							initializeComponentConfigurations(components);
+						}
+						else
+						{
+							//console.log('component populate vert list failed: ');
+							//console.log(populateVerticalListError);
+						}
+							
+					});
+				}
+				else
+				{
+					//console.log('component fetch failed: ');
+					//console.log(componentsFetchedError);
+				}
+			}
+			
+			//console.log('component fetch starting: ');
+			fetchAccountObjects('/accounts/<%- account.id %>/projects/<%- project.id %>/robots/<%- robot.id %>/jsonlistcomponents', componentsFetched);
+			//fetchAccountObjects('/accounts/<%- account.id %>/projects/' + projectId + '/robots/jsonlist?type=component', success);
+		}
+		catch(err)
+		{
+			////console.log(err.toString());
+		}
+	 });
+	 
+	 function refreshEditors()
+	 {
+	 	javascriptEditor.refresh();
+	 	htmlEditor.refresh();
+	 	resizeComponents();
+	 }
+	 
+	 function submitContainerForm()
+	 {
+	 	////console.log("submitting");
+	 	////console.log(htmlEditor);
+	 	
+	 	helpEditor.saveHTML();
+	 	htmlEditor.save();
+	 	javascriptEditor.save();
+	 	
+	 	////console.log(encodeURIComponent($("#ta_configurator").val()));
+	 	////console.log(encodeURIComponent($("#ta_javascript").val()));
+	 	
+	 	$("#Robot_name").val($("#txt_robot_name").val());
+	 	$("#Robot_version").val($("#txt_robot_version").val());
+	 	$("#Robot_category").val($("#txt_robot_category").val());
+	 	$("#Robot_helpHtml").val(safeEncodeMarkup($("#ta_help").val()));
+	 	$("#Robot_configuratorHtml").val(safeEncodeMarkup($("#ta_configurator").val()));
+	 	$("#Robot_javascript").val(safeEncodeMarkup($("#ta_javascript").val()));
+	 	
+	 	
+	 	var systemVersion = $("#div_robot_systemversion").html();
+	 	
+	 	////console.log('systemVersion');
+	 	////console.log(systemVersion);
+	 	
+	 	if (systemVersion == null || systemVersion == '')
+	 		systemVersion = '0';
+	 	else
+	 		systemVersion = (parseFloat(systemVersion) + 1).toString();
+	 	
+	 	////console.log('systemVersion');
+	 	////console.log(systemVersion);
+	 	
+		$("#Robot_systemVersion").val(systemVersion);
+	 	
+	 	////console.log($("#Robot_configuratorHtml").val());
+	 	
+	 	$("#Robot_description").val($("#ta_robot_description").val());
+	 	
+	 	updateOpenComponentConfiguration(function(){
+	 		$("#Robot_componentConfigurations").val(serializeJSON(getComponentConfigurations()));
+	 		$("#robot_form").submit();
+		});
+	 }
+	 
+	 var designerDetailsVisible = false;
+	 function toggleDesignerDetails()
+	 {
+	 	if (!designerDetailsVisible)
+	 		$('.designerDetails').show();
+	 	else
+	 		$('.designerDetails').hide();
+	 		
+	 	designerDetailsVisible = !designerDetailsVisible;
+	 }
+	 
+	 function resizeComponents()
+	 {
+		 //designerContainerMainCellDark
+	 	var width = parseInt($('.designerContainerMainCellDark').css('width').replace('px','')) - 20;
+	 	var height =  parseInt($('.designerContainerMainCellDark').css('height').replace('px','')) - 40;
+	 	
+	 	/*
+	 	var width = parseInt($('.component_container').css('width').replace('px','')) - 10;
+	 	var height =  parseInt($('.component_container').css('height').replace('px','')) - 40;
+	 	*/
+	 	
+	 	////console.log(width);
+	 	////console.log(height);
+	 	
+	 	$('#editorTabs').css('width', width.toString() + 'px');
+	 	$('#editorTabs').css('height', (height - 20).toString() + 'px');
+	 	
+	 	$('#ta_help_container').css('width', (width - 25).toString() + 'px');
+	 	$('#ta_help_container').css('height', (height - 70).toString() + 'px');
+	 	
+	 	$('#component-tab-table').css('height', (height - 68).toString() + 'px');
+	 	$('#component-tab-table').css('width', (width - 25).toString() + 'px');
+	 	
+	 	$('div.[class="CodeMirror"]').each(function() {
+		   $(this).css('height', (height - 70).toString() + 'px');
+		   $(this).css('width', (width - 25).toString() + 'px');
+		});
+	 	
+		$('div.[class^="CodeMirror-scroll"]').each(function() {
+			   $(this).css('height', (height - 70).toString() + 'px');
+			   $(this).css('width', (width - 25).toString() + 'px');
+			});
+	 	
+	 	/*
+	 	$('div.[class^="CodeMirror"]').each(function() {
+		   $(this).css('height', (height - 10).toString() + 'px');
+		   //$(this).css('width', (width - 10).toString() + 'px');
+		});
+	 	*/
+	 	
+	 	$('.CodeMirror').css('border','1px solid gray');
+	 	
+	 }
+	 
+	 function addComponent()
+	 {
+		 ///application/pick?list_url=%2Faccounts%2F4ffddcda294d8f0000000001%2Fprojects%2F4fff2d4173946f9008000016%2Frobots%2Fjsonlist&name_property=name&image_property=thumbnailPath&list_header=Pick%20a%20bot
+		 var list_header = "Components in this project";
+		 var list_url = '%2Faccounts%2F<%- account.id %>%2Fprojects%2F<%- project.id %>%2Frobots%2Fjsonlist?type=component';
+		 var name_property = 'name';
+		 var image_property = 'thumbnailPath';
+		 var sourceUrl = '/application/pick?list_url=' + list_url + '&name_property=' + name_property + '&image_property=' + image_property + '&list_header=' + list_header + '&item_picked_event=componentSelected&default_image_path=%2Fimages%2Fcomponent.png';
+		 
+		 var content = "<div class=\"iframeContainer\" ><iframe class=\"containerIframe\" src=\"" + sourceUrl + "\"></iframe></div>";
+		 openModalChildWindow('Pick a component' , content, 800, 600);
+	 }
+	 
+	 function initializeComponentConfigurations(components)
+	 {
+		 var componentConfigurations = getComponentConfigurations();
+		 //console.log('initializing comps');
+		 //console.log(components);
+		//var componentConfigurations = {};
+		
+		//setComponentConfigurations(componentConfigurations);
+		
+		for (var componentIndex in components)
+		{
+			var componentInstance = components[componentIndex];
+			initializeComponent(componentInstance);
+		}
+		
+		//console.log('component init complete');
+		//console.log(getComponentConfigurations());
+		
+	 }
+	 
+	 function setComponentConfigurations(componentConfigurations)
+	 {
+		 $('body').data('componentConfigurations', componentConfigurations);
+	 }
+	 
+	 function getComponentConfigurations()
+	 {
+		 var componentConfigurations = $('body').data('componentConfigurations');
+		 
+		 writeToLog("componentConfigurations: ");
+		 writeToLog(componentConfigurations);
+		 
+		 if (componentConfigurations == null)
+			 return {};
+	     else
+	    	 return componentConfigurations;
+	 }
+	 
+	 function initializeComponent(component)
+	 {
+		 var componentConfigurations = getComponentConfigurations();
+		
+		 if (component.robotComponentConfig == null)
+			 component.robotComponentConfig = '{}';
+		 
+		 componentConfigurations[component.id] = {version:component.systemVersion, status:component.robotComponentStatus, configuration:component.robotComponentConfig,componentRobotId:component.componentRobotId};
+
+		
+		 $('body').data('componentConfigurations', componentConfigurations);
+	 }
+	 
+	 function setComponentStatus(componentId, status)
+	 {
+		 	//console.log('setting component status');
+			//console.log(status);
+			 
+			var componentConfigurations = getComponentConfigurations();
+			
+			if (componentConfigurations[componentId] != null)
+			{
+				//console.log('setting component status for');
+				//console.log(componentConfigurations[componentId]);
+				componentConfigurations[componentId]['status'] = status;
+			}
+			
+			$('body').data('componentConfigurations', componentConfigurations);
+			
+			//console.log('setting component status done');
+			//console.log(getComponentConfigurations());
+	 }
+	 
+	 function setComponentConfiguration(componentId, config)
+	 {
+		//console.log('setting component config');
+		//console.log(config);
+		 
+		var componentConfigurations = getComponentConfigurations();
+		
+		if (componentConfigurations[componentId] != null)
+		{
+			//console.log('setting component config for');
+			//console.log(componentConfigurations[componentId]);
+			componentConfigurations[componentId]['configuration'] = config;
+		}
+		
+		$('body').data('componentConfigurations', componentConfigurations);
+		
+		//console.log('setting component config done');
+		//console.log(getComponentConfigurations());
+		 
+	 }
+	 
+	 function getComponentConfiguration(componentId, done)
+	 {
+		 
+		 var success = function(response, fetchAccountObjectErr)
+		 {
+			if (fetchAccountObjectErr != null)
+			{
+				done(fetchAccountObjectErr, null);
+			}
+			else
+			{
+				var component = response;
+				var configObject = component['configuration'];
+				
+				if (configObject == null)
+					configObject = {};
+				/*
+				else
+					configObject = deserializeJSON(configObject);
+				*/
+				
+				done(null, configObject);
+			}
+		 }.bind(this);
+		 
+		 fetchAccountObject('/accounts/<%- account.id %>/projects/<%- project.id %>/robots/<%- robot.id %>/getcomponent?component_id=' + componentId, success);
+	 }
+	 
+	 function updateOpenComponentConfiguration(done)
+	 {
+		 done = done.bind(this);
+		 
+		 var currentConfigPage = $('#componentConfiguratorFrame')[0]['contentWindow'];
+		 
+		 if (currentConfigPage != null && currentConfigPage.updateConfiguration != null)
+		 {
+			 //console.log('updating open component config');
+			 currentConfigPage.updateConfiguration(done);
+		 }
+		 else
+			 done();
+	 }
+	 
+	 function componentSelected(component, listURL)
+	 {
+		 ////console.log('component selected ');
+		 ////console.log(component);
+		 ////console.log(listURL);
+		 
+		 var componentAdded = function(response)
+		 {
+			 //console.log('component selected response');
+			//console.log(response);
+			 
+			if (response['status'] == "OK")
+			{
+				componentVerticalList.addItem(response['data'], '/images/component.png', function(){
+					showMessage(response['message'], "success", 5000);
+					closeModalChildWindow();
+				}); 
+				
+			}
+			else
+			{
+				showMessage(response['message'], "error", 5000);
+			}
+		 }
+		 
+		 //url, type, data, success, failure
+		 
+		 postAccountObject('/accounts/<%- account.id %>/projects/<%- project.id %>/robots/<%- robot.id %>/addcomponent', "Robotcomponent", {"component_robot_id":component.id,"component_robot_version":component.systemVersion}, componentAdded);
+
+	 }
+	 
+	 function componentConfigured(componentId, configObject, done)
+	 {
+		 console.log('updating conponent config');
+		 
+		 console.log(componentId);
+		 console.log(configObject);
+		 
+		 var componentUpdated = function(response)
+		 {
+			 console.log(response);
+			 
+			 if (response.status == "OK")
+			 {
+				 done();
+			 }
+			 else
+		     {
+				 
+				 done(response['message']);
+		     }
+		 }
+		 //accounts/:account_id/projects/:project_id/robots/:id/updatecomponent
+		 postAccountObject('/accounts/<%- account.id %>/projects/<%- project.id %>/robots/<%- robot.id %>/updatecomponent', "Robotcomponent", {"component_robot_id":componentId,"component_configuration":configObject}, componentUpdated);
+
+		 console.log('componentConfigured');
+		 
+		 ////console.log('componentConfigured');
+		 ////console.log(componentId);
+		 ////console.log(configObject);
+		 
+		
+		 //done();
+		 
+	 }
+	 
+	 function removeComponent(componentId)
+	 {
+		var componentConfigurations = $('body').data('componentConfigurations');
+		 
+		if (componentConfigurations != null)
+		{
+			 componentConfigurations[componentId] = null;
+			 $('body').data('componentConfigurations', componentConfigurations);
+		}
+	 }
+	 
+</script>
+<table class="designerContainer" cellpadding="0" cellspacing="0">
+	<tr class="designerHeader">
+	<td class="designer_toolbar_cell">
+		<table class="designer_toolbar">
+			<tr>
+				<td class="designer_td_icon"><img class="tool-button" src="/images/save16.png" onclick="submitContainerForm()" alt="save" /></td>
+				<td class="designer_td_icon"><img class="tool-button" src="/images/pencilplus32.png" onclick="toggleDesignerDetails()" alt="toggle details" style="width:16px;height:16px" /></td>
+				<td class="designer_td_icon"><img class="tool-button" src="/images/component.png" onclick="addComponent()" alt="change image"></img></td>
+				<td class="designer_td_icon"><img class="tool-button" src="/images/change_image32.png" onclick="$('#thumbNailSelectorDiv').show()" alt="change image"></img></td>
+				<td class="designer_td_icon"><img class="tool-button" src="/images/versioncontrol.png" onclick="versionControl()" alt="version control"></img></td>
+			</tr>
+		</table>
+	</td>
+	</tr>
+	<tr class="designerDetailsRow">
+		<td class="designerDetails">
+			<div class="control-group">
+			   <label for="txt_robot_name" class="details_label">Name</label>
+			   <div class="controls">
+			       <input class="mediumText" type="text" name="txt_robot_name" id="txt_robot_name"></input>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="Robot_version" class="details_label">Version</label>
+			   <div class="controls">
+			       <input class="smallText" type="text" name="txt_robot_version" id="txt_robot_version"></input>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="txt_robot_category" class="details_label">Category</label>
+			   <div class="controls">
+			       <input class="mediumText" type="text" name="txt_robot_category" id="txt_robot_category"></input>
+			   </div>
+			</div>
+		    <div class="control-group">
+			   <label for="Robot_description" class="details_label">Description</label>
+			   <div class="controls">
+			       <textarea name="ta_robot_description" id="ta_robot_description" cols=100 rows=3></textarea>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="Robot_systemversion" class="details_label">System Version</label>
+			   <div class="controls">
+			       <div id="div_robot_systemversion" name="div_robot_systemversion" ></div>
+			   </div>
+			</div>
+		</td>
+	</tr>
+	<tr class="designerContainerTopSplitterRow"><td class="designerContainerTopSplitterCell" colspan="2"></td></tr>
+	<tr class="designerContainerMainRow"><td class="designerContainerMainCellDark" colspan="2" style="vertical-align:top">
+		<% form_for(robot, {action: path_to.account_project_robot(params.account_id, params.project_id, robot), method: 'PUT', id: "robot_form", class: 'form-horizontal', enctype: 'multipart/form-data'}, function (form) { %>
+		    <input type="hidden" name="Robot[name]" id="Robot_name" />
+			<input type="hidden" name="Robot[version]" id="Robot_version" />
+			<input type="hidden" name="Robot[category]" id="Robot_category" />
+		    <input type="hidden" name="Robot[configuratorHtml]" id="Robot_configuratorHtml" />
+			<input type="hidden" name="Robot[javascript]" id="Robot_javascript" />
+			<input type="hidden" name="Robot[helpHtml]" id="Robot_helpHtml" />
+			<input type="hidden" name="Robot[description]" id="Robot_description" />
+			<input type="hidden" name="Robot[systemVersion]" id="Robot_systemVersion" />
+			<input type="hidden" name="Robot[componentConfigurations]" id="Robot_componentConfigurations" />
+			<div id="thumbNailSelectorDiv" class="thumbNailSelector">Select image: <input type="file" id="Robot_thumbnailFile" name="Robot[thumbnailFile]"><a class="buttonLink" onclick="$('#thumbNailSelectorDiv').hide()">hide</a></div>
+			<div id="editorTabs" class="easyui-tabs">
+				<div id="javascript-tab" title="Instructions">	
+					<textarea id="ta_javascript" name="ta_javascript" style="width:100%;height:100%"></textarea>
+				</div>	
+				<div id="configurator-tab"  title="Controls">	
+					<textarea id="ta_configurator" name="ta_configurator" style="width:100%;height:100%"></textarea>
+				</div>	
+				<div id="component-tab" title="Components">	
+				<table id="component-tab-table" style="width:100%;height:100%" cellpadding=5>
+					<tr>
+						<td style="width:310px;vertical-align:top">
+							<table id="robot_vertical_list" class="robot-vertical-list">
+							</table>
+						</td>
+						<td>
+							<iframe id="componentConfiguratorFrame" class="contentFrame" ></iframe>
+						</td>
+					</tr>
+				</table>
+				</div>	
+				<div id="help-tab" name="help-tab" class="yui-skin-sam"  title="Manual">	
+					<textarea id="ta_help" name="ta_help"></textarea>
+				</div>	
+			</div>	
+		<% });%>
+	
+	</td></tr>
+</table>

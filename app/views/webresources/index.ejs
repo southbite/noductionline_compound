@@ -1,0 +1,39 @@
+<div class="page-header">
+     <h1>Parts for project <%- link_to(project.name, path_to.account_project(params.account_id,project)) %></h1>
+</div>
+
+<div class="row">
+    <div class="span12">
+        <p><%- link_to('<i class="icon-plus icon-white"></i> New part', path_to.new_account_project_webresource(params.account_id, params.project_id), {class: 'btn btn-primary'}) %></>
+    </div>
+</div>
+
+<div class="row">
+    <div class="span12">
+        <% if (webresources.length > 0) { %>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% webresources.forEach(function (webresource) { %>
+                        <tr>
+                            <td><strong><%- link_to(webresource.key, path_to.account_project_webresource(params.account_id, params.project_id, webresource)) %></strong></td>
+                            <td>
+                                <%- link_to('<i class="icon-edit"></i> Edit', path_to.edit_account_project_webresource(params.account_id, params.project_id, webresource), {class: 'btn btn-mini'}) %>
+                                <%- link_to('<i class="icon-remove icon-white"></i> Delete', path_to.account_project_webresource(params.account_id, params.project_id, webresource), {class: 'btn btn-mini btn-danger', method: 'delete', remote: true, jsonp: '(function (u) {location.href = u;})'}) %>        
+                            </td>
+                        </tr>
+                    <% }); %>        
+                </tbody>
+            </table>
+        <% } else { %>
+            <p class="alert alert-block alert-info">
+                <strong>No webresources were found.</strong> 
+            </p>
+        <% } %>
+    </div>
+</div>

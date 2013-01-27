@@ -1,0 +1,109 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+
+<script type="text/javascript">
+
+var onItemPickedEvent;
+var listURL;
+var listHeader;
+var defaultItemImage;
+var nameProperty;
+var imageProperty;
+
+/*
+	Test URL
+	http://localhost:3000/application/pick?list_url=%2Faccounts%2F4ffddcda294d8f0000000001%2Fprojects%2F4fff2d4173946f9008000016%2Frobots%2Fjsonlist&name_property=name&image_property=thumbnailPath
+ */
+
+ $(document).ready(function() {
+	try
+	{
+		onItemPickedEvent = parent[getQuerystring('item_picked_event', null)]; 
+		
+		jsonListURL = getQuerystring('list_url', null);
+		listHeader = getQuerystring('list_header', null);
+		defaultItemImage = getQuerystring('default_item_image', null);
+		nameProperty = getQuerystring('name_property', null);
+		imageProperty = getQuerystring('image_property', null);
+		defaultImagePath = getQuerystring('default_image_path', null);
+		
+		var success = function(items)
+	 	{
+			console.log('got items');
+			console.log(items);
+			//Bots in this project
+			
+			populateItems(items, listHeader, defaultImagePath);
+	 	}
+		
+		fetchAccountObjects(jsonListURL, success);
+	}
+	catch(err)
+	{
+		console.log(err.toString());
+	}
+ });
+	 
+ function populateItems(items, header, defaultImagePath)
+ {
+	var listHtml = "<div class=\"picker_section_header\">" + header + "</div><table class=\"picker_list\" cellpadding=\"3\">"
+	var itemRowCount = Math.ceil(items.length / 6);
+	var actualCellIndex = 0;
+	
+	for (var rowIndex = 0; rowIndex < itemRowCount; rowIndex++)
+	{
+		listHtml += "<tr>";
+		for (var cellIndex = 0; cellIndex < 6; cellIndex++)
+		{
+			listHtml += "<td class=\"picker_cell\" id=\"picker_cell_" + actualCellIndex.toString() + "\"></td>";
+			actualCellIndex++;
+		}
+		listHtml += "</tr>";
+	}
+	
+	listHtml += "</table>"
+	
+	$('#itemsContainerDiv').append(listHtml);
+	
+	var cellCount = 0;
+	for (var itemIndex in items)
+	{
+		var itemInstance = items[itemIndex];
+		var itemHtml = getItemHtml(itemInstance, defaultImagePath);
+		
+		console.log(itemInstance);
+		
+		$('#picker_cell_' + cellCount.toString()).html(itemHtml);
+		$('#pick_item_' + itemInstance.id).data('itemInstance', itemInstance);
+		
+		cellCount++;
+	}
+ }
+ 
+ function getItemHtml(itemInstance, defaultImagePath)
+ {
+	 var itemImage = defaultItemImage;
+	 
+	 if (itemInstance[imageProperty])
+		 itemImage = itemInstance[imageProperty];
+	 else
+		 itemImage = defaultImagePath;
+	 
+	 return "<div class=\"pick_item\" id=\"pick_item_" + itemInstance.id + "\" ><img src=\"" + itemImage + "\" class=\"pick_item_img\"></img><br><span onclick=\"selectItem('pick_item_" + itemInstance.id + "');\" class=\"pick_item_text\">" + itemInstance[nameProperty] + "</span></div>";
+ }
+ 
+ function selectItem(itemControlId)
+ {
+	 console.log('selecting item');
+	 var item = $('#' + itemControlId).data('itemInstance');
+	 
+	 console.log(item);
+	 
+	 onItemPickedEvent(item, window.location.href);
+ }
+	 
+</script>
+
+<div id="itemsContainerDiv" class="pickerContainer">
+	
+</div>

@@ -1,0 +1,31 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+<script>
+
+$(document).ready(function() {
+	var stepId = getQuerystring('step', null);
+	setConfiguration(parent.getStepConfiguration(stepId));
+	
+	$('#btnChange').attr('href', '/accounts/<%- account.id %>/projects/<%- project.id %>/robots/pick?step=' + stepId.toString())
+});
+
+function updateConfiguration()
+{
+	var robotId = '<%- robot.id -%>';
+	var robotThumbnailPath = '<%- robot.thumbnailPath -%>';
+	var stepId = getQuerystring('step', null);
+	var configObject = getConfiguration();
+	
+	parent.stepConfigured({id:robotId, thumbnailPath: robotThumbnailPath}, stepId, configObject);
+}
+</script>
+<div class="designerHeader designer_toolbar_cell" style="height:25px">
+	<table class="designer_toolbar">
+	<tr>
+	    <td class="designer_td_icon"><img src="/images/defaultbot16.png"></td><td class="designer_td_text"><a id='btnChange' class='buttonLink'>Change</a></td>
+	    <td class="designer_td_icon"><img src="/images/save16.png"></td><td class="designer_td_text"><a class='buttonLink' onclick='updateConfiguration()'>Update</a></td>
+	</tr>
+	</table>
+</div>
+<div class="hdivider_light"></div>
+<%- decodeURIComponent(robot.configuratorHtml) -%>

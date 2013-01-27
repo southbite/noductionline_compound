@@ -1,0 +1,97 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery-ui.min','jquery.jsPlumb-1.3.10-all-min', 'demo','demo-list','demo-helper-jquery','designer_clientside','blueprint_designer_clientside') %>
+<%- stylesheet_link_tag('noductionstyle','jsPlumbDemo', 'demo') %>
+<script>
+	
+	 $(document).ready(function() {
+		try
+		{
+			$("#txt_blueprint_name").val('<%- blueprint.name -%>');
+			$("#txt_blueprint_version").val('<%- blueprint.version -%>');
+			
+			
+			
+		}
+		catch(err)
+		{
+			console.log(err.toString());
+		}
+	 });
+	 
+	 function submitContainerForm()
+	 {
+	 	$("#Blueprint_name").val($("#txt_blueprint_name").val());
+	 	$("#Blueprint_version").val($("#txt_blueprint_name").val());
+	 	
+	 	$("#blueprint_form").submit();
+	 }
+	 
+	 var designerDetailsVisible = false;
+	 function toggleDesignerDetails()
+	 {
+	 	if (!designerDetailsVisible)
+	 		$('.designerDetails').show();
+	 	else
+	 		$('.designerDetails').hide();
+	 		
+	 	designerDetailsVisible = !designerDetailsVisible;
+	 }
+	 
+	 function getFlowData()
+	 {
+	 	return "";
+	 }
+
+</script>
+<table class="designerContainer">
+	<tr class="designerHeader">
+	<td class="designer_toolbar_cell">
+		<table class="designer_toolbar">
+			<tr>
+			    <td class="designer_td_icon"><img src="/images/save16.png"></td><td class="designer_td_text"><a href="javascript: submitContainerForm()" class="buttonLink">Update</a></td>
+			    <td class="designer_td_icon"><img src="/images/logout16.png"></td><td class="designer_td_text"><%- link_to('Cancel', path_to.account_project_blueprint(params.account_id, params.project_id, blueprint), {class: 'buttonLink'}) %></td>
+			</tr>
+		</table>
+	</td>
+	<td>
+		<table class="designerHeaderLabel">
+			<tr class="designerHeaderRow" onclick="toggleDesignerDetails()">
+				<td class="blueprintImageTd"><img src="/images/design32.png" alt="Blueprint image"></img></td>
+				<td><h1 class="designerHeaderHeader">Edit <%= blueprint.name %></h1></td>
+			</tr>
+		</table>
+	</td></tr>
+	<tr class="designerDetailsRow">
+		<td class="designerDetails" colspan="2">
+			<div class="control-group">
+			   <label for="txt_blueprint_name" class="details_label">Name</label>
+			   <div class="controls">
+			       <input class="mediumText" type="text" name="txt_blueprint_name" id="txt_blueprint_name"></input>
+			   </div>
+			</div>
+			<div class="control-group">
+			   <label for="Blueprint_version" class="details_label">Version</label>
+			   <div class="controls">
+			       <input class="smallText" type="text" name="txt_blueprint_version" id="txt_blueprint_version"></input>
+			   </div>
+			</div>
+		</td>
+	</tr>
+	<tr class="designerContainerTopSplitterRow"><td class="designerContainerTopSplitterCell" colspan="2"></td></tr>
+	<tr class="designerContainerMainRow"><td class="designerContainerMainCell" colspan="2">
+		<% form_for(blueprint, {action: path_to.account_project_blueprint(params.account_id, params.project_id, blueprint), method: 'PUT', id: "blueprint_form", class: 'form-horizontal', enctype: 'multipart/form-data'}, function (form) { %>
+		    <input type="hidden" name="Blueprint[name]" id="Blueprint_name" />
+			<input type="hidden" name="Blueprint[version]" id="Blueprint_version" />
+		    <div style="position:absolute;width:100%;height:100%">
+			    <div id="demo">
+				    <div class="component window" id="window1"><strong>Window 1</strong><br/><br/>I am plumbed with a Bezier connector to Window 2 and a label, with Blank endpoints.</div>
+				    <div class="component window" id="window2"><strong>Window 2</strong><br/><br/>I am plumbed with a Bezier connector to Window 1, and a Bezier connector with Rectangle endpoints to Window 3</div>
+			        <div class="component window" id="window3"><strong>Window 3</strong><br/><br/>I am plumbed with a Bezier connector and Rectangle endpoints to Window 2, and a Bezier connector with Dot endpoints and a label to Window 4. My blue endpoint tracks Window 4's position.</div>
+			        <div class="component window" id="window4"><strong>Window 4</strong><br/><br/>I am plumbed with a Bezier connector with Dot endpoints to Window 3, and with a Straight connector with Image endpoints to Window 5. My blue endpoint tracks Window 3's position.</div>
+			        <div class="component window" id="window5"><strong>Window 5</strong><br/><br/>I am plumbed with a Flowchart connector to Window 6, between our two centerpoints, which are drawn below, and larger than, the window element; I am also plumbed to Window 4.</div>
+			        <div class="component window" id="window6"><strong>Window 6</strong><br/><br/>I am plumbed with a Flowchart connector to Window 5, between our two centerpoints, which are drawn below, and larger than, the window element.</div>
+			        <div class="component window" id="window7"><strong>Window 7</strong><br/><br/>I am plumbed with State Machine connectors to Window 3.</div>
+			    </div>
+			 </div>
+		<% });%>
+	</td></tr>
+</table>

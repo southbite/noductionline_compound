@@ -1,0 +1,19 @@
+<div class="page-header">
+    <h1>Account <%= account.name %></h1>
+</div>
+<table class="toolbar">
+<tr>
+    <td class="td_icon"><img src="/images/linedpaper32.png"></td><td class="td_text"><%- link_to('List', path_to.accounts(), {class: 'buttonLink'}) %></td>
+    <td class="td_icon"><img src="/images/pencil32.png"></td><td class="td_text"><%- link_to('Edit', path_to.edit_account(account), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/minus32.png"></td><td class="td_text"><%- link_to('Delete', path_to.account(account), {class: 'buttonLink', method: 'delete', remote: true, jsonp: '(function (u) { location.href = u; })'}) %></td>
+    <td class="td_icon"><img src="/images/design32.png"></td><td class="td_text"><%- link_to('Projects', path_to.account_projects(account.id), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/users32.png"></td><td class="td_text"><%- link_to('Users', path_to.account_users(account.id), {class: 'buttonLink'}) %></td>
+</tr>
+</table>
+<table class="table table-bordered">
+    <tbody>
+        <tr><th>created</th><td><%= account.created %></td></tr>
+        <tr><th>description</th><td><%= account.description %></td></tr>    
+    </tbody>
+</table>
+

@@ -1,0 +1,17 @@
+<div class="page-header">
+    <h1>Blueprint <%= blueprint.name %></h1>
+</div>
+<div class="well">
+    <%- link_to('<i class="icon-edit icon-white"></i> Edit', path_to.edit_account_project_blueprint(params.account_id, params.project_id, blueprint), {class: 'btn btn-primary'}) %>
+    <%- link_to('<i class="icon-remove icon-white"></i> Delete', path_to.edit_account_project_blueprint(params.account_id, params.project_id, blueprint), {class: 'btn btn-danger', method: 'delete', remote: true, jsonp: '(function (u) { location.href = u; })'}) %>
+    or
+    <%- link_to('Back to index', path_to.account_project_blueprints(params.account_id, params.project_id)) %>
+</div>
+<table class="table table-bordered">
+    <tbody>
+        <tr><th>Created</th><td><%= blueprint.created %></td></tr>
+        <tr><th>Created By</th><td><%= blueprint.createdBy %></td></tr>
+        <tr><th>Version</th><td><%= blueprint.version %></td></tr>    
+    </tbody>
+</table>
+

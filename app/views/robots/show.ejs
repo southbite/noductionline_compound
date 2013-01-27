@@ -1,0 +1,27 @@
+<%- stylesheet_link_tag('noductionstyle') %>
+<div class="page-header">
+    <table class="headerTable"><tr><td class="robotImageTd"><img src="/images/<%= robot.thumbnailPath?robot.thumbnailPath:"defaultbot32.png" %>" alt="Robot image"></img></td><td><h2><%= robot.name %></h2></td></tr></table>
+</div>
+<div class="well">
+    <%- link_to('<i class="icon-edit icon-white"></i> Edit', path_to.edit_account_project_robot(params.account_id, params.project_id, robot), {class: 'btn btn-primary'}) %>
+    <%- link_to('<i class="icon-remove icon-white"></i> Delete', path_to.account_project_robot(robot), {class: 'btn btn-danger', method: 'delete', remote: true, jsonp: '(function (u) { location.href = u; })'}) %>
+    or
+    <%- link_to('Back to index', path_to.account_project_robots(params.account_id, params.project_id)) %>
+</div>
+<table class="table table-bordered">
+    <tbody>
+        <tr>
+        	<th>version</th>
+        	<td><%= robot.version %></td>
+			<th>created</th>
+			<td><%= robot.created %></td>
+        <tr>
+        	<th>category</th>
+        	<td colspan=3><%= robot.category %></td>
+        </tr>   
+        <tr>
+        	<td colspan=4 class="descriptionContainer"><%= robot.description %></td>
+        </tr> 
+    </tbody>
+</table>
+

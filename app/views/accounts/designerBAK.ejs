@@ -1,0 +1,629 @@
+<%- javascript_include_tag('jquery-1.7.1-min','jquery.easyui.min') %>
+<%- stylesheet_link_tag('noductionstyle') %>
+<script>
+	 $(document).ready(function() {
+		try
+		{
+			resizeComponents();
+			tabSelected(0);
+			/*
+			$("#accountTabs").tabs({
+			 onSelect:function(title, index){  
+			      resizeComponents();
+			      tabSelected(index);
+			    }
+			});
+			*/
+			
+			//http://www.cssplay.co.uk/menus/vertical_tab_two.html?current=one
+		}
+		catch(err)
+		{
+			console.log(err.toString());
+		}
+	 }); 
+	 
+	 function tabSelected(tabIndex)
+	 {
+	 	console.log('tab selected ' + tabIndex);
+	 
+	 	if (tabIndex == -1 || tabIndex == 0)
+	 	{
+	 		$('body').data('projectFoldersRefreshed', null);
+	 		refreshWorkshop();
+	 	}
+	 	
+	 	if (tabIndex == 1)
+	 	{
+	 		$('body').data('factoryFoldersRefreshed', null);
+	 		refreshFactory();
+	 	}
+	 	
+	 	if (tabIndex == 2)
+	 	{
+	 		$('body').data('warehouseFoldersRefreshed', null);
+	 		refreshWarehouse();
+	 	}
+	 }
+	 
+	 function newProject()
+	 {	
+		var header = "Create a new project";
+		var sourceUrl = '/accounts/<%- account.id %>/projects/createNew';
+		
+		//alert(robotId + stepId);
+		var content = "<div class=\"iframeContainer\" ><iframe class=\"containerIframe\" src=\"" + sourceUrl + "\"></iframe></div>";
+		openModalChildWindow(header , content, 340, 230);
+	 }
+	 
+	 function refreshWarehouse()
+	 {
+		 
+	 }
+	 
+	 function refreshFactory()
+	 {
+		 
+	 }
+	 
+	 function refreshWorkshop()
+	 {
+		 loadProjects(null);
+	 }
+	 
+	 function loadProjects(newProject)
+	 {
+	 	var success = function(projects)
+	 	{
+	 		console.log(projects);
+	 		populateSideMenu('workshop_accordion_panel', renderSideMenuItems('project', projects), newProject);
+	 	}
+	 
+	 	fetchAccountObjects('/accounts/<%- account.id %>/projects/jsonlist', success, "name", "ASC", "");
+	 }
+	 
+	 /*
+	 function renderProjects(projects)
+	 {
+	 	var projectsHtml = '<ul class="sideMenu"><li><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/workflow_32x32.png\" /> <span>Projects</span><ul id="ul_sidemenu_project">';
+	 
+	 	for (var projectIndex in projects)
+ 		{
+ 			var projectInstance = projects[projectIndex];
+ 			addItemData('project', projectInstance);
+ 			projectsHtml += "<li id=\"project_sidemenuitem_" + projectInstance.id + "\" item_id=\"" + projectInstance.id + "\" item_name=\"" + projectInstance.name + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/workflow_32x32.png\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('project','" + projectInstance.id + "');\">" + projectInstance.name + "</a></li>";
+ 	 	}
+ 		
+ 		projectsHtml += '</ul></li></ul>';
+ 		
+ 		return projectsHtml;
+	 }
+	 */
+	 
+	 function populateSideMenu(panelId, renderedHtml, itemToSelect)
+	 {
+	 	$('#' + panelId).html(renderedHtml);
+	 	
+	 	if (itemToSelect != null)
+	 	{
+	 		//we select the item here
+	 	}
+	 }
+	 
+	 function renderSideMenuItems(itemType, items)
+	 {
+		var ulId = "ul_sidemenu_" + itemType;
+		var imageName = "img_sidemenu_" + itemType + ".png";
+	 	var itemsHtml = '<ul class="sideMenu"><li><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/' + imageName + '\" /> <span>Projects</span><ul id="' + ulId + '">';
+	 
+	 	for (var itemIndex in items)
+ 		{
+ 			var item = items[itemIndex];
+ 			addItemData(itemType, item);
+ 			itemsHtml += renderSideMenuItemHtml(itemType, item);
+ 	 	}
+ 		
+	 	itemsHtml += '</ul></li></ul>';
+ 		
+ 		return itemsHtml;
+	 }
+	 
+	 function updateSideMenuItems(itemsListURL, ulId, itemToSelect, itemType, parentId)
+	 {
+		 console.log('updating sidemenu items');
+		 
+		 var itemsFetched = function(items){
+			 var existingItems = [];
+			 
+			 $('#' + ulId).find('li').each(function()
+			 {
+				 var existingItemId = $(this).attr('item_id');
+				 existingItems.push(existingItemId);
+			 });
+			 
+			 var indexArray = new Array();
+			 for (var itemIndex in items)
+			 {
+				 var itemInstance = items[itemIndex];
+				 var itemFound = false;
+				 for (var existingItemIndex in existingItems)
+			     {
+					if (existingItems[existingItemIndex] == itemInstance.id)
+					{
+						itemFound = true;
+						break;
+					}
+			     }
+				 
+				 if (!itemFound)
+			     {
+					 console.log('item instance to insert: ' + itemInstance);
+					 console.log(itemInstance);
+					 indexArray[itemIndex] = itemInstance;
+			     }
+					
+			 }
+
+			 $.fn.insertAt = function(index, $parent) {
+				    return this.each(function() {
+				        if (index === 0) {
+				            $parent.prepend(this);
+				        } else {
+				        	var len = $parent.children().length;
+				        	
+				        	if (index > len)
+				        		$parent.children().eq(len).after(this);
+				        	else
+				        		$parent.children().eq(index - 1).after(this);
+				        }
+				    });
+				}
+			 
+			 for (var index in indexArray)
+			 {
+				 console.log('inserting item at index: ' + index);
+				 console.log(index);
+				 
+				 var newItem = $(renderSideMenuItemHtml(itemType, indexArray[index]));
+				 newItem.insertAt(index,  $('#' + ulId)); 
+				 addItemData(itemType, indexArray[index]);
+			 }
+			 
+			 if (itemToSelect != null)
+		 	 {
+		 		selectSideMenuItem(itemType, itemToSelect);
+		 	 }
+		 };
+		 
+		if (parentId != null)
+		{
+			console.log('parentId' + parentId);
+			refreshProjectItemFolders('project_item_' + itemType + 's', parentId, function()
+				 	{
+						console.log('refreshProjectItemFolders done');
+			 			fetchAccountObjects(itemsListURL, itemsFetched, "name", "ASC", "");
+				 	});
+		}	
+		else
+			fetchAccountObjects(itemsListURL, itemsFetched, "name", "ASC", "");
+		
+
+	 }
+	 
+	 function renderSideMenuItemHtml(itemType, item)
+	 {
+		 var imageName = "img_sidemenu_" + itemType + ".png";
+		 return "<li id=\"" + itemType + "_sidemenuitem_" + item.id + "\" item_id=\"" + item.id + "\" item_name=\"" + item.name + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/" + imageName + "\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('" + itemType + "','" + item.id + "');\">" + item.name + "</a></li>";
+	 }
+	 
+	 function selectSideMenuItem(itemType, itemToSelect)
+	 {
+		 sideMenuClicked(itemType, itemToSelect.id);
+	 }
+	 
+	 function resizeComponents()
+	 {
+		$('html').css('width','100%');
+		$('html').css('height','100%');
+		 
+		$('body').css('width','100%');
+		$('body').css('height','100%');
+		
+	 	var width = parseInt($('.component_container').css('width').replace('px','')) - 5;
+	 	var height =  parseInt($('.component_container').css('height').replace('px','')) - 5;
+	 	
+	 	var innerWidth = parseInt($('.component_container').css('width').replace('px','')) - 5;
+	 	var innerHeight =  parseInt($('.component_container').css('height').replace('px','')) - 5;
+	 	
+	 	var contentWidth = innerWidth - 300;
+	 	var contentHeight =  innerHeight - 120;
+	 	
+	 	console.log(width);
+	 	console.log(height);
+	 	
+	 	$('#accountTabs').css('width', width.toString() + 'px');
+	 	$('#accountTabs').css('height', height.toString() + 'px');
+	 	$('.sidemenu_container').css('width', innerWidth.toString() + 'px');
+	 	$('#contentContainer').css('width', contentWidth.toString() + 'px');
+	 	$('#contentContainer').css('height', contentHeight.toString() + 'px');
+	 	$('.easyui-accordion').css('height', contentHeight.toString() + 'px');
+	 	$('.contentFrame').css('height', contentHeight.toString() + 'px');
+	 	
+	 	var sideMenuLeft = parseInt($('.sidemenu_container').css('left').replace('px',''));
+	 	
+	 	/*
+	 	$('#areaMenuContainerDiv').css('top',$('.sidemenu_container').css('top'));
+	 	$('#areaMenuContainerDiv').css('left',(sideMenuLeft + 250 - 32).toString() + 'px');
+	 	
+	 	$('#areaMenuContainerDiv').css('display','block');
+	 	
+	 	console.log($('#areaMenuContainerDiv'));
+	 	*/
+	 }
+	 
+	 function sideMenuClicked(itemType, itemId)
+	 {
+	 	console.log(itemType + itemId);
+	 
+	 	if (itemType == 'project')
+	 	{
+	 		var projectInstance = getItemData(itemType, itemId);
+	 		refreshProjectFolders(itemId);
+	 		
+	 		$('body').data('currentProject', projectInstance)
+	 		
+	 		openTab('/images/workflow_32x32.png', projectInstance.name, getAccountItemUrl(itemType, itemId, 'edit'), itemType + itemId)
+	 	}
+	 	
+	 	if (itemType == 'project_item_blueprints' || itemType == 'project_item_components' || itemType == 'project_item_robots')
+	 	{
+	 		 refreshProjectItemFolders(itemType, itemId);
+	 	}
+	 	
+	 	if (itemType == 'blueprint')
+	 	{
+	 		var blueprintInstance = getItemData(itemType, itemId);
+	 		//getProjectItemUrl(projectId, itemType, itemId, action)
+	 		openTab('/images/flow32.png', blueprintInstance.name, getProjectItemUrl(blueprintInstance.projectId, 'blueprint', blueprintInstance.id, 'edit'), itemType + itemId)
+	 	}
+	 	
+	 	if (itemType == 'robot')
+	 	{
+	 		var robotInstance = getItemData(itemType, itemId);
+	 		//getProjectItemUrl(projectId, itemType, itemId, action)
+	 		
+	 		console.log('opening tab');
+	 		
+	 		openTab('/images/defaultbot32.png', robotInstance.name, getProjectItemUrl(robotInstance.projectId, 'robot', robotInstance.id, 'edit'), itemType + itemId)
+	 	}
+	 	
+	 	if (itemType == 'component')
+	 	{
+	 		var robotInstance = getItemData(itemType, itemId);
+	 		//getProjectItemUrl(projectId, itemType, itemId, action)
+	 		
+	 		console.log('opening tab');
+	 		
+	 		openTab('/images/component.png', robotInstance.name, getProjectItemUrl(robotInstance.projectId, 'robot', robotInstance.id, 'edit'), itemType + itemId)
+	 	}
+	 	
+	 }
+	 
+	 function refreshProjectItemFolders(itemType, projectId, done)
+	 {
+	 	var success = function(items)
+	 	{
+	 		if (itemType == 'project_item_blueprints')
+		 		populateBlueprints(items, projectId, done);
+		 		
+		 	if (itemType == 'project_item_components')
+		 		populateRobots(items, projectId, 'component', done);
+		 		
+		 	if (itemType == 'project_item_robots')
+		 		populateRobots(items, projectId, 'processor', done);
+	 		
+	 	}.bind(this);
+	 
+	 	if (itemType == 'project_item_blueprints')
+	 		fetchAccountObjects('/accounts/<%- account.id %>/projects/' + projectId + '/blueprints/jsonlist', success, 'name', 'ASC');
+	 		
+	 	if (itemType == 'project_item_robots')
+	 		fetchAccountObjects('/accounts/<%- account.id %>/projects/' + projectId + '/robots/jsonlist?type=processor', success, 'name', 'ASC');
+	 		
+	 	if (itemType == 'project_item_components')
+	 		fetchAccountObjects('/accounts/<%- account.id %>/projects/' + projectId + '/robots/jsonlist?type=component', success, 'name', 'ASC');
+	 }
+	 
+	 function populateRobots(items, projectId, robotType, done)
+	 {
+		console.log(items);
+		 
+		if (robotType == 'processor')
+			robotType = 'robot';
+		
+	 	var robotsHtml = "";
+	 	var robotsSideMenuItem = $('#project_' + robotType + 's_' + projectId);
+	 	var robotsSideMenuItemUl = $('#project_' + robotType + 's_ul_' + projectId);
+	 	
+	 	for (var robotIndex in items)
+	 	{
+	 		var robotInstance = items[robotIndex];
+	 		robotInstance['projectId'] = projectId;
+	 		addItemData(robotType, robotInstance);
+	 		
+	 		var robotImageUrl = robotInstance.thumbnailPath;
+	 		
+	 		if (robotImageUrl == null && robotType == 'robot')
+	 			robotImageUrl = "/images/defaultbot32.png";
+	 		
+	 		if (robotImageUrl == null && robotType == 'component')
+	 			robotImageUrl = "/images/component.png";
+	 		
+	 		robotsHtml += "<li id=\"robot_" + projectId + "_" + robotInstance.id + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"" + robotImageUrl + "\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('" + robotType + "','" + robotInstance.id + "');\">" + robotInstance.name + "</a></li>";
+	 	}
+	 	
+	 	if (robotsSideMenuItemUl.html() != null)
+	 		robotsSideMenuItemUl.html(robotsHtml);
+	 	else
+	 		robotsSideMenuItem.append("<ul id=\"project_" + robotType + "s_ul_" + projectId + "\">" + robotsHtml + "</ul>");
+	 	
+	 	if (done != null)
+	 		done();
+	 }
+	 
+	 function populateBlueprints(items, projectId, done)
+	 {
+	 	var blueprintsHtml = "";
+	 	var blueprintsSideMenuItem = $('#project_blueprints_' + projectId);
+	 	var blueprintsSideMenuItemUl = $('#project_blueprints_ul_' + projectId);
+	 	
+	 	for (var blueprintIndex in items)
+	 	{
+	 		var blueprintInstance = items[blueprintIndex];
+	 		blueprintInstance['projectId'] = projectId;
+	 		addItemData('blueprint', blueprintInstance);
+	 		blueprintsHtml += "<li id=\"blueprint_" + projectId + "_" + blueprintInstance.id + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/flow32.png\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('blueprint','" + blueprintInstance.id + "');\">" + blueprintInstance.name + "</a></li>";
+	 	}
+	 	
+	 	if (blueprintsSideMenuItemUl.html() != null)
+	 		blueprintsSideMenuItemUl.html(blueprintsHtml);
+	 	else
+	 		blueprintsSideMenuItem.append("<ul id=\"project_blueprints_ul_" + projectId + "\">" + blueprintsHtml + "</ul>");
+	 	
+	 	if (done)
+	 		done();
+	 }	
+	 
+	 function refreshProjectFolders(projectId)
+	 {
+	 	if ($('body').data('projectFoldersRefreshed_' + projectId) == null)
+	 	{
+		 	var sideMenuItem = $('#project_sidemenuitem_' + projectId);
+		 	
+		 	var refreshHtml = "<ul><li id=\"project_blueprints_" + projectId + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/flow32.png\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('project_item_blueprints','" + projectId + "');\">Blueprints</a></li>";
+		 	refreshHtml += "<li id=\"project_robots_" + projectId + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/defaultbot32.png\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('project_item_robots','" + projectId + "');\">Robots</a></li>";
+		 	refreshHtml += "<li id=\"project_components_" + projectId + "\" class=\"sideMenuItem\"><img style=\"width:16px;height:16px;margin-top:4px\" src=\"/images/component.png\" /> <a class=\"sideMenuItemLink\" onclick=\"sideMenuClicked('project_item_components','" + projectId + "');\">Components</a></li></ul>";
+		 
+		 	sideMenuItem.append(refreshHtml);
+		 	$('body').data('projectFoldersRefreshed_' + projectId, true);
+	 	}
+	 }
+	 
+	 function getProjectItemUrl(projectId, itemType, itemId, action)
+	 {
+	 	return '/accounts/<%- account.id  %>/projects/' + projectId + '/' + itemType + 's/' + itemId + '/' + action;
+	 }
+	 
+	 function getAccountItemUrl(itemType, itemId, action)
+	 {
+	 	return '/accounts/<%- account.id  %>/' + itemType + 's/' + itemId + '/' + action;
+	 }
+	 
+	 function openTab(image, title, url, key)
+	 {
+		title = "<span class='tab_title' key='" + key + "'>" + title + "</span>";
+		 
+		if (image != null)
+			title = "<img src=\"" + image + "\" style=\"width:16px;height:16px;top:5px;left:0px;position:relative\"></img> " + title;
+		 
+	 	var openTabs = $('body').data('openTabs');
+	 	
+	 	if (openTabs == null)
+	 		openTabs = {};
+	 
+	 	if (openTabs[key] != null)
+	 	{
+	 		$('#contentContainer').tabs('select', openTabs[key]);
+	 	}
+	 	else
+	 	{
+	 		$('#contentContainer').tabs({
+				onAdd: function(title, index){
+					 resizeComponents();
+				},
+				onBeforeClose: function(title,index){
+					 return checkBeforeClose(title,index);
+				},
+				onClose: function(title, index){
+					var tHtml = $(title);
+					
+					tHtml.each(function(){
+						var tkey = $(this).attr('key');
+						
+						if (tkey != null)
+						{
+							console.log('closing tab ');
+							console.log(tkey);
+
+							openTabs[tkey] = null;
+						}
+					});
+				}
+			});
+	 
+		 	$('#contentContainer').tabs('add',{
+				title:title,
+				content:getContentIframe(url),
+				closable:true
+			});
+			
+			var tab = $('#contentContainer').tabs('getSelected');
+			var index = $('#contentContainer').tabs('getTabIndex',tab);
+			
+			openTabs[key] = index;
+			$('body').data('openTabs', openTabs);
+	 	}
+	 }
+	 
+	 function checkBeforeClose(title, index)
+	 {
+	 	console.log("closing " + title);
+	 	return true;
+	 }
+	 
+	 function getContentIframe(url)
+	 {
+	 	return "<iframe class=\"contentFrame\" src=\"" + url + "\" style=\"height:" + $("#contentContainer").css("height") + "\"></iframe>";
+	 }
+	 
+	 function receiveMessage(messageObj)
+	 {
+	 	
+	 }
+	 
+	 function addItemData(itemType, itemData)
+	 {
+	 	var itemsData = $('body').data('itemsData');
+	 	
+	 	if (itemsData == null)
+	 		itemsData = {};
+	 		
+	 	itemsData[itemType + itemData.id] =  itemData;
+	 	
+	 	 $('body').data('itemsData', itemsData);
+	 	 
+	 	 console.log('added data' + $('body').data('itemsData'));
+	 }
+	 
+	 function getItemData(itemType, itemId)
+	 {
+	 	var itemsData = $('body').data('itemsData');
+	 	
+	 	console.log('itemsData');
+	 	console.log(itemsData);
+	 	
+	 	if (itemsData != null)
+	 		return itemsData[itemType + itemId];
+	 	
+	 	return null;
+	 }
+	 
+	 function newBlueprint()
+	 {
+		var header = "Create a new blueprint";
+		var currentProject = $('body').data('currentProject');
+		 
+		var sourceUrl = '/accounts/<%- account.id %>/blueprints/new?suggested_project_id=' + currentProject.id + '&item_created_event=newBlueprintAdded';
+		
+		//alert(robotId + stepId);
+		var content = "<div class=\"iframeContainer\" ><iframe class=\"containerIframe\" src=\"" + sourceUrl + "\"></iframe></div>";
+		openModalChildWindow(header , content, 340, 280);
+	 }
+	 
+	 function newBlueprintAdded(blueprint)
+	 {
+		 console.log('newBlueprintAdded');
+		 console.log(blueprint);
+		 
+		 //updateSideMenuItems(itemType, itemToSelect, parentType, parentId)
+		 
+		 var blueprintListContainerUL = 'project_blueprints_ul_' + blueprint.id; 
+		 var listURL = '/accounts/<%- account.id %>/projects/' + blueprint.projectId + '/blueprints/jsonlist';
+		 
+		 updateSideMenuItems(listURL, blueprintListContainerUL, blueprint, 'blueprint', blueprint.projectId);
+		 
+		 closeModalChildWindow();
+	 }
+	 
+	 function newRobot(type)
+	 {
+		 var header = "Create a new bot";
+		 var currentProject = $('body').data('currentProject');
+		 
+			var sourceUrl = '/accounts/<%- account.id %>/robots/new?suggested_project_id=' + currentProject.id + '&item_created_event=newRobotAdded&type=' + type;
+			
+			//alert(robotId + stepId);
+			var content = "<div class=\"iframeContainer\" ><iframe class=\"containerIframe\" src=\"" + sourceUrl + "\"></iframe></div>";
+			openModalChildWindow(header , content, 340, 280);
+	 }
+	 
+	 function newRobotAdded(robot)
+	 {
+		 console.log('newRobotAdded');
+		 console.log(robot);
+		 
+		 //updateSideMenuItems(itemType, itemToSelect, parentType, parentId)
+		 
+		 var robotListContainerUL = 'project_robots_ul_' + robot.id;
+		 var componentListContainerUL = 'project_components_ul_' + robot.id;
+		 
+		 var listURL = '/accounts/<%- account.id %>/projects/' + robot.projectId + '/robots/jsonlist?type=' + robot.type;
+		 
+		 //updateSideMenuItems(itemsListURL, ulId, itemToSelect)
+		 
+		 if (robot.type == 'processor')
+			updateSideMenuItems(listURL, robotListContainerUL, robot, 'robot', robot.projectId);
+		 else
+			updateSideMenuItems(listURL,componentListContainerUL, robot, 'component', robot.projectId);
+			
+		 closeModalChildWindow();
+	 }
+
+	 
+</script>
+<table class="designerContainer">
+	<tr class="designerHeader">
+		<td class="designer_toolbar_cell">
+	        <table class="appHeaderTable"><tr><td class="appLogoTd"><img src="/images/defaulbot64.png" alt="Noductionline"></img></td><td class="appLogoTextTd"><img src="/images/logo_gray.png" alt="Noductionline"></img></td><td class="topMenuTd"></td></tr></table>
+		</td>
+	</tr>
+	<tr class="designerContainerTopSplitterRow"><td class="designerContainerTopSplitterCell" colspan="2"></td></tr>
+	<tr class="designerContainerMainRow"><td class="designerContainerMainCellDark" colspan="2">
+	<table class="sidemenu_container" cellpadding="5px">
+		<tr>
+			<td id="workshopSideMenuTd" class="sidemenu_container_sidemenu">
+				<div class="easyui-accordion" style="width:300px;">
+				    <div title="WORKSHOP" iconCls="icon-workshop" class="accordion_panel" selected="true">
+				    	<div id="sidemenu_panel_toolbar_workshop" class="sidemenu_panel_toolbar">
+				    	<table class="designer_toolbar" style="float:right">
+							<tr>
+							    <td class="designer_td_icon"><img class="tool-button" src="/images/workflow_32x32.png" onclick="newProject();" alt="new project" /></td>
+							    <td class="designer_td_icon"><img class="tool-button" src="/images/flow32.png" onclick="newBlueprint();" alt="new blueprint" /></td>
+							    <td class="designer_td_icon"><img class="tool-button" src="/images/defaultbot32.png" onclick="newRobot('processor');" alt="new robot" /></td>
+							    <td class="designer_td_icon"><img class="tool-button" src="/images/component.png" onclick="newRobot('component');" alt="new component" /></td>
+							</tr>
+						</table>
+				    	</div>
+				    	<div id="workshop_accordion_panel" class="sidemenu_panel_content"></div>
+				    </div>
+				    <div title="FACTORY" iconCls="icon-factory" class="accordion_panel"> 
+				    	<div id="sidemenu_panel_toolbar_factory" class="sidemenu_panel_toolbar"></div>
+				    	<div id="factory_accordion_panel" class="sidemenu_panel_content"></div>
+				    </div>
+				    <div title="STORAGE" iconCls="icon-storage" class="accordion_panel">
+				    	<div id="sidemenu_panel_toolbar_storage" class="sidemenu_panel_toolbar"></div>
+				    	<div id="storage_accordion_panel" class="sidemenu_panel_content"></div>
+				    </div>
+				</div>
+			</td>
+			<td id="workshopSideMenuControlsTd" class="sidemenu_container_sidemenusplitter">
+				<div></div>
+			</td>
+			<td id="workshopContainerTd" class="sidemenu_container_container">
+				<div id="contentContainer"></div>
+			</td>
+		</tr>
+	</table>
+	</td></tr>
+</table>
+

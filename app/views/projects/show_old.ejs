@@ -1,0 +1,21 @@
+<div class="page-header">
+    <h1>Project <%= project.name %></h1>
+</div>
+
+<table class="toolbar">
+<tr>
+    <td class="td_icon"><img src="/images/linedpaper32.png"></td><td class="td_text"><%- link_to('List', path_to.account_projects(params.account_id), {class: 'buttonLink'}) %></td>
+    <td class="td_icon"><img src="/images/pencil32.png"></td><td class="td_text"><%- link_to('Edit', path_to.edit_account_project(params.account_id, project), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/minus32.png"></td><td class="td_text"><%- link_to('Delete', path_to.account_project(params.account_id, project), {class: 'buttonLink', method: 'delete', remote: true, jsonp: '(function (u) { location.href = u; })'}) %></td>
+    <td class="td_icon"><img src="/images/design32.png"></td><td class="td_text"><%- link_to('Blueprints', path_to.account_project_blueprints(params.account_id, project.id), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/defaultbot32.png"></td><td class="td_text"><%- link_to('Robots', path_to.account_project_robots(params.account_id, project.id), {class: 'buttonLink'}) %></td>
+	<td class="td_icon"><img src="/images/defaultbot32.png"></td><td class="td_text"><%- link_to('Parts', path_to.account_project_webresources(params.account_id, project.id), {class: 'buttonLink'}) %></td>
+</tr>
+</table>
+<table class="table table-bordered">
+    <tbody>
+        <tr><th>created</th><td><%= project.created %></td></tr>
+        <tr><th>createdBy</th><td><%= project.createdBy %></td></tr>    
+    </tbody>
+</table>
+
